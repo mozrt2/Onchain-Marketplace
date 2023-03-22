@@ -40,7 +40,7 @@ Thorough review of the entire code to ensure users can safely interact with (1) 
 
 ### Optimization
 
-- Gas cost improvement for all write functions: the greatest opportunity for improvement is most likely storage management, i.e. how sell orders are stored and managed. This is also the greatest downside of using Onchain Marketplace - selling an item costs ~300k gas and buying ~150k gas, much more than for off-chain solutions
+Gas cost improvement for all write functions: the greatest opportunity for improvement is most likely storage management, i.e. how sell orders are stored and managed. This is also the greatest downside of using Onchain Marketplace - selling an item costs ~300k gas and buying ~150k gas, much more than for off-chain solutions
 
 ### Additional Features
 
