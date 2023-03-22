@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.13;
 
-// Wrappers for functions from the Seaport contract.
-// Refer to Seaport and SeaportValidator contracts for details on structs, enums, and functions below. 
+/// @title MarketInterface
+/// @author mozrt (mozrt.eth)
+/// @notice Interface with Seaport for MarketMap. Refer to Seaport and SeaportValidator contracts for details on structs, enums, and functions below. 
 
 struct OrderParameters {
     address offerer; 

@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.13;
 
-// Maps NFTs for sale.
-
 import "./MarketInterface.sol";
+
+/// @title MarketMap
+/// @author mozrt (mozrt.eth)
+/// @notice This contract stores and manages simple ERC721 (NFT) buy and sell orders for Seaport onchain.
 
 struct UniqueOrderParameters {
     address offerer; 
@@ -22,6 +24,10 @@ contract MarketMap {
     ISeaportValidator immutable seaportValidator;
     bytes32 immutable conduitKey;
 
+    /// @notice Creates a new MarketMap contract.
+    /// @param _seaportAddress The address of the Seaport contract.
+    /// @param _seaportValidatorAddress The address of the SeaportValidator contract.
+    /// @param _conduitKey The key used for the conduit.
     constructor (
         address _seaportAddress, 
         address _seaportValidatorAddress, 
@@ -37,6 +43,8 @@ contract MarketMap {
     mapping(address => uint256[]) private tokenIdsWithOrders;
     mapping(address => mapping(uint256 => uint256)) private tokenIdToIndex;
 
+    /// @notice Creates a sell order.
+    /// @param order The order parameters in Seaport's format.
     function sell(
         Order memory order 
     ) public {
@@ -62,6 +70,10 @@ contract MarketMap {
         addTokenId(token, tokenId);
     }
  
+    /// @notice Triggers the purchase of an NFT listed for sale on MarketMap.
+    /// @param token The address of the NFT collection contract.
+    /// @param tokenId The ID of the token.
+    /// @param recipient The address of the recipient of the NFT.
     function buy(
         address token,
         uint256 tokenId,
@@ -79,12 +91,18 @@ contract MarketMap {
         }
     }
 
+    /// @notice Retrieves the token IDs of the listed orders for a given NFT collection.
+    /// @param token The address of the NFT collection contract.
+    /// @return A list of token IDs with active orders.
     function getOrders(
         address token
     ) public view returns (uint256[] memory) {
         return tokenIdsWithOrders[token];
     }
 
+    /// @notice Allows a seller to cancel their order.
+    /// @param token The address of the NFT collection contract.
+    /// @param tokenId The ID of the token to be canceled.
     function cancelOrder(
         address token,
         uint256 tokenId
@@ -113,6 +131,10 @@ contract MarketMap {
         removeTokenId(token, tokenId);
     }
 
+    /// @notice Composes a Seaport AdvancedOrder object for a given order.
+    /// @param token The address of the NFT collection.
+    /// @param tokenId The ID of the token linked to the order.
+    /// @return An AdvancedOrder object containing the order information.
     function composeOrder(
         address token,
         uint256 tokenId
@@ -161,6 +183,9 @@ contract MarketMap {
         return advancedOrder;
     } 
 
+    /// @notice Adds a token ID to the list of token IDs with active orders.
+    /// @param token The address of the NFT collection contract.
+    /// @param tokenId The ID of the token to be added.
     function addTokenId(address token, uint256 tokenId) internal {
         if(tokenIdToIndex[token][tokenId] != 0) {
             removeTokenId(token, tokenId);
@@ -169,6 +194,9 @@ contract MarketMap {
         tokenIdsWithOrders[token].push(tokenId);
     }
 
+    /// @notice Removes a token ID from the internal list of token IDs with active orders.
+    /// @param token The address of the NFT collection contract.
+    /// @param tokenId The ID of the token to be removed.
     function removeTokenId(address token, uint256 tokenId) internal {
         uint256 index = tokenIdToIndex[token][tokenId] - 1;
         uint256 lastTokenId = tokenIdsWithOrders[token][tokenIdsWithOrders[token].length - 1];

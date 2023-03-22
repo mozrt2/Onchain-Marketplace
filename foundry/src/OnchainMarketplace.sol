@@ -2,15 +2,21 @@
 
 pragma solidity ^0.8.13;
 
-// Onchain marketplace frontend.
-
 import "./MarketMap.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Base64.sol";
 
-contract Storefront is MarketMap {
+/// @title Onchain Marketplace
+/// @author mozrt (mozrt.eth)
+/// @notice This contract is the onchain frontend for MarketMap, an onchain marketplace database connected to Seaport.
+
+contract OnchainMarketplace is MarketMap {
 
     string public contractAddress;
 
+    /// @dev Initializes the OnchainMarketplace contract.
+    /// @param _seaportAddress The address of the seaport contract.
+    /// @param _seaportValidatorAddress The address of the seaport validator contract.
+    /// @param _conduitKey The conduit key for the seaport contract.
     constructor (
     address _seaportAddress, 
     address _seaportValidatorAddress, 
@@ -23,6 +29,9 @@ contract Storefront is MarketMap {
         contractAddress = toAsciiString(address(this));
     }
 
+    /// @dev Converts an address to an ASCII string.
+    /// @param x The address to be converted.
+    /// @return The address as an ASCII string.
     function toAsciiString(address x) internal pure returns (string memory) {
         bytes memory s = new bytes(42);
         s[0] = "0";
@@ -37,16 +46,23 @@ contract Storefront is MarketMap {
         return string(s);
     }
 
+    /// @dev Converts a byte to a character.
+    /// @param b The byte to be converted.
+    /// @return c The byte as a character.
     function char(bytes1 b) internal pure returns (bytes1 c) {
         if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
         else return bytes1(uint8(b) + 0x57);
     }
 
+    /// @notice Returns the HTML for the Onchain Marketplace interface.
+    /// @return The full HTML string.
     function html() public view returns (string memory) {
         string memory fullHTML = string(abi.encodePacked(htmlFirst, contractAddress, htmlSecond));
         return fullHTML;
     } 
 
+    /// @notice Returns the Base64 encoded HTML for the Onchain Marketplace interface.
+    /// @return The Base64 encoded HTML string.
     function htmlBase64() public view returns (string memory) {
         string memory prefix = "data:text/html;base64,";
         string memory fullHTML = html();

@@ -21,11 +21,9 @@ To test without having to set up anything else, you can use the off-chain versio
 ## Overview
 
 Onchain Marketplace is composed of 3 Solidity files:
-- MarketInterface.sol[***link to be added***]: contains all structs, enums, and functions to interact with the Seaport contract
-- MarketMap.sol[***link to be added***]: Onchain Marketplace's backend, storing and managing all sell, buy and cancel orders
-- Storefront.sol[***link to be added***]: an html file stored onchain that enables users to interact with the Onchain Marketplace through their browsers - it doesn't use any external libraries / resources and interacts with the Ethereum network through RPC requests to a user's wallet (I learnt a lot about calldata this week :) )
-
-All three files will be annotated to facilitate collaboration in subsequent versions. This is part of the to-dos below. 
+- [**MarketInterface.sol**](https://github.com/mozrt2/Onchain-Marketplace/blob/main/foundry/src/MarketInterface.sol): contains all structs, enums, and functions to interact with the Seaport contract
+- [**MarketMap.sol**](https://github.com/mozrt2/Onchain-Marketplace/blob/main/foundry/src/MarketMap.sol): Onchain Marketplace's backend, storing and managing all sell, buy and cancel orders
+- [**OnchainMarketplace.sol**](https://github.com/mozrt2/Onchain-Marketplace/blob/main/foundry/src/Storefront.sol) (formerly Storefront.sol): an html file stored onchain that enables users to interact with the Onchain Marketplace through their browsers - it doesn't use any external libraries & resources and interacts with the Ethereum network through RPC requests to a user's wallet (I learnt a lot about calldata this week :) )
 
 ## Tested environments
 
@@ -43,12 +41,11 @@ Thorough review of the entire code to ensure users can safely interact with (1) 
 ### Optimization
 
 - Gas cost improvement for all write functions: the greatest opportunity for improvement is most likely storage management, i.e. how sell orders are stored and managed. This is also the greatest downside of using Onchain Marketplace - selling an item costs ~300k gas and buying ~150k gas, much more than for off-chain solutions
-- Refactoring of the HTML file (incl. annotation): this first version was put together as a quick proof of concept, it works but is not well structured and easily understandable. With this optimization, it will also be much smaller and cost less to deploy on Mainnet
 
 ### Additional Features
 
 Frontend:
-- Ensure Seaport's counter is queried so users can repost a sale they cancelled previously
+- Ensure Seaport's counter is queried so users can repost the same sale they cancelled previously
 - Show transaction hash and status 
 - Wait until the first sell transaction is confirmed to trigger the next one
 - Load data from TokenURI to show an NFT's preview image, attributes & co. 
@@ -58,7 +55,6 @@ Frontend:
 - Create a user friendly UI while keeping CSS to a minimum
 
 Backend:
-- Annotation of the Solidity files
 - Enable more sale types: bulk sales, ERC1155 sales, ERC20 payments, decreasing/increasing prices, auctions, etc. 
 
 
