@@ -103,13 +103,11 @@ interface ISeaport {
     function fulfillAdvancedOrder(AdvancedOrder calldata advancedOrder, CriteriaResolver[] calldata criteriaResolver, bytes32 fulfillerConduitKey, address recipient) external payable returns (bool fulfilled);
     function cancel(OrderComponents[] calldata orders) external returns (bool cancelled);
     function getCounter(address offerer) external view returns (uint256 counter);
-}
-
-interface ISeaportValidator {
-    function validateOfferItems(OrderParameters memory orderParameters) external view returns (ErrorsAndWarnings memory errorsAndWarnings);
+    function validate(Order[] calldata orders) external returns (bool validated);
 }
 
 interface IERC721 {
     function getApproved(uint256 tokenId) external view returns (address operator);
+    function ownerOf(uint256 tokenId) external view returns (address owner);
 }
 

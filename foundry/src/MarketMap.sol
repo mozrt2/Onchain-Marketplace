@@ -9,33 +9,30 @@ import "./MarketInterface.sol";
 /// @notice This contract stores and manages simple ERC721 (NFT) buy and sell orders for Seaport onchain.
 
 struct UniqueOrderParameters {
-    address offerer; 
-    uint256 amount;
-    uint256 startTime;
-    uint256 endTime; 
-    uint256 salt; 
-    bytes signature;
+    uint32 amount;
+    uint32 startTime;
+    uint32 endTime; 
+    uint16 salt; 
+    bytes1 vSignature;
+    bytes32 rSignature;
+    bytes32 sSignature;
 }
 
 contract MarketMap {
 
     address immutable seaportAddress;
     ISeaport immutable seaport;
-    ISeaportValidator immutable seaportValidator;
     bytes32 immutable conduitKey;
 
     /// @notice Creates a new MarketMap contract.
     /// @param _seaportAddress The address of the Seaport contract.
-    /// @param _seaportValidatorAddress The address of the SeaportValidator contract.
     /// @param _conduitKey The key used for the conduit.
     constructor (
         address _seaportAddress, 
-        address _seaportValidatorAddress, 
         bytes32 _conduitKey
         ) {
         seaportAddress = _seaportAddress;
         seaport = ISeaport(_seaportAddress);
-        seaportValidator = ISeaportValidator(_seaportValidatorAddress);
         conduitKey = _conduitKey;
     }
 
@@ -43,28 +40,52 @@ contract MarketMap {
     mapping(address => uint256[]) private tokenIdsWithOrders;
     mapping(address => mapping(uint256 => uint256)) private tokenIdToIndex;
 
-    /// @notice Creates a sell order.
+    /// @notice Creates a sell order after ensuring that it is in the valid format and the token is approved for Seaport.
     /// @param order The order parameters in Seaport's format.
     function sell(
         Order memory order 
     ) public {
-        uint16[] memory errors = seaportValidator.validateOfferItems(order.parameters).errors;
-        require(errors.length == 0 || errors[0] == 304, "Invalid order");
+        uint256 amount = order.parameters.consideration[0].startAmount;
+        require(amount%1e13 == 0 && amount < 1e22, "Wei amount cannot have any digits other than 0 for its first 13 digits and cannot exceed 10,000 ETH");
+
+        uint256 endTime = order.parameters.endTime;
+        require(endTime < 4.2*1e9, "End time must be smaller than 4.2 billion");
+
+        uint256 salt = order.parameters.salt;
+        require(salt < 65000, "Salt must be less than 65,000");
 
         address approvedAddress = IERC721(order.parameters.offer[0].token).getApproved(order.parameters.offer[0].identifierOrCriteria);
         require(approvedAddress == seaportAddress, "Seaport not approved to transfer token");
 
-        address token = order.parameters.offer[0].token;
-        uint256 tokenId = order.parameters.offer[0].identifierOrCriteria;
+        Order[] memory orderList = new Order[](1);
+        orderList[0] = order;
+        bool validated = seaport.validate(orderList);
+        require(validated == true, "Invalid Order");
+
+        bytes1 v;
+        bytes32 r;
+        bytes32 s;
+
+        bytes memory signature = order.signature;
+
+        assembly {
+            v := mload(add(signature, 0x20))
+            r := mload(add(signature, 0x21))
+            s := mload(add(signature, 0x41))
+        }
 
         UniqueOrderParameters memory uniqueOrderParameters = UniqueOrderParameters({
-            offerer: order.parameters.offerer,
-            amount: order.parameters.consideration[0].startAmount,
-            startTime: order.parameters.startTime,
-            endTime: order.parameters.endTime,
-            salt: order.parameters.salt,
-            signature: order.signature
+            amount: uint32(order.parameters.consideration[0].startAmount/1e13),
+            startTime: uint32(order.parameters.startTime),
+            endTime: uint32(order.parameters.endTime),
+            salt: uint16(order.parameters.salt),
+            vSignature: v,
+            rSignature: r,
+            sSignature: s
         });
+
+        address token = order.parameters.offer[0].token;
+        uint256 tokenId = order.parameters.offer[0].identifierOrCriteria;
 
         orders[token][tokenId] = uniqueOrderParameters;
         addTokenId(token, tokenId);
@@ -81,6 +102,7 @@ contract MarketMap {
     ) public payable {
         AdvancedOrder memory advancedOrder = composeOrder(token, tokenId);
         CriteriaResolver[] memory emptyCriteriaResolver = new CriteriaResolver[](0);
+
         bool fulfilled = seaport.fulfillAdvancedOrder{value: msg.value}(advancedOrder, emptyCriteriaResolver, conduitKey, recipient);
 
         if (fulfilled) {
@@ -126,7 +148,9 @@ contract MarketMap {
             counter: counter
         });
 
-        seaport.cancel(orderComponents);
+        bool cancelled = seaport.cancel(orderComponents);
+        require(cancelled == true, "Order couldn't be cancelled");
+
         delete orders[token][tokenId];
         removeTokenId(token, tokenId);
     }
@@ -140,7 +164,13 @@ contract MarketMap {
         uint256 tokenId
     ) internal view returns (AdvancedOrder memory) {
         UniqueOrderParameters memory uniqueOrderParameters = orders[token][tokenId];
-
+        address offerer = IERC721(token).ownerOf(tokenId);
+        bytes memory signature = abi.encodePacked(
+            uniqueOrderParameters.vSignature,
+            uniqueOrderParameters.rSignature,
+            uniqueOrderParameters.sSignature
+        );
+        uint256 amount = uint256(uniqueOrderParameters.amount)*1e13;
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721,
@@ -155,31 +185,30 @@ contract MarketMap {
             itemType: ItemType.NATIVE,
             token: address(0),
             identifierOrCriteria: 0,
-            startAmount: uniqueOrderParameters.amount,
-            endAmount: uniqueOrderParameters.amount,
-            recipient: payable(uniqueOrderParameters.offerer)
+            startAmount: amount,
+            endAmount: amount,
+            recipient: payable(offerer)
         });
 
         AdvancedOrder memory advancedOrder = AdvancedOrder({
             parameters: OrderParameters({
-                offerer: uniqueOrderParameters.offerer,
+                offerer: offerer,
                 zone: address(this),
                 offer: offer,
                 consideration: consideration,
                 orderType: OrderType.FULL_OPEN,
-                startTime: uniqueOrderParameters.startTime,
-                endTime: uniqueOrderParameters.endTime,
+                startTime: uint256(uniqueOrderParameters.startTime),
+                endTime: uint256(uniqueOrderParameters.endTime),
                 zoneHash: bytes32(0),
-                salt: uniqueOrderParameters.salt,
+                salt: uint256(uniqueOrderParameters.salt),
                 conduitKey: bytes32(0),
                 totalOriginalConsiderationItems: 1
             }),
             numerator: 1,
             denominator: 1,
-            signature: uniqueOrderParameters.signature,
+            signature: signature,
             extraData: bytes("")
         });
-
         return advancedOrder;
     } 
 

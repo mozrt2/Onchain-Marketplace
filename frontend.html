@@ -5,7 +5,7 @@
         <script>
 
             // Address of the Onchain Marketplace contract, set automatically by the constructor during contract creation
-            const contractAddress = '0x94C513807f9eAC865041e96A326b3E222965b0eB';
+            const contractAddress = '0x9CC904561904B1B206069FE6d20995A0964f29ce';
 
             // Function to send requests to the user's wallet
             const request = (method, params) => window.ethereum.request({ method, params });
@@ -25,7 +25,6 @@
                 // Connect to the user's wallet
                 request('eth_requestAccounts')
                 .then((accounts) => {
-                    const account = accounts[0];
                     setHtml('walletAddress', accounts[0]);
                     setHtml('welcome', 'Welcome ');
                 })
@@ -53,7 +52,7 @@
 
                 // Get the list of tokens for sale in the collection and display them
                 request('eth_call',[{ to: contractAddress, data:'0x093376fe000000000000000000000000'+token }, 'latest'])
-                .then((result) => {        
+                .then((result) => {    
                     container.innerHTML = '';
                     const countClean = parseInt(result.substring(66,130), 10);
                     const ids = [];
@@ -64,9 +63,8 @@
                         const data = '0x793b8c6d000000000000000000000000'+token+id;
                         request('eth_call',[{ to: contractAddress, data:data }, 'latest'])
                         .then((result) => {
-                            const endTime = Number(parseInt(result.substring(194,258), 16));
+                            const endTime = Number(parseInt(result.substring(130,194), 16));
                             const endTimeDate = new Date(endTime * 1000);
-
                             if(result.substring(2,66) != '0'.repeat(64) && endTime > new Date().getTime()/1000) {
                                 const newItem = createHtml('div');
                                 newItem.id = idClean;
@@ -74,12 +72,14 @@
                                 container.appendChild(newItem);
                                 newItem.innerHTML = `<p>token no.</p><h3>${idClean}</h3><p>for sale until ${endTimeDate.toLocaleDateString()}</p>`;
                                 const buyButton = createHtml('button');
-                                const price = result.substring(66,130);
-                                const priceClean = (Number(parseInt(price, 16))/1e18).toFixed(2);
+                                const price = result.substring(2,66);
+                                const priceClean = (Number(parseInt(price, 16))/1e5).toFixed(2);
+                                const priceWei = toHex(priceClean*1e18);
+                                const priceWei32 = "0".repeat(64-priceWei.length)+priceWei;
                                 buyButton.innerHTML = 'Buy now Ξ'+priceClean;
                                 const account = getHtml('walletAddress').innerHTML.slice(2);
                                 buyButton.onclick = () => {
-                                    buy('0x'+price, token, id, account); 
+                                    buy('0x'+priceWei32, token, id, account); 
                                 }; 
                                 newItem.appendChild(buyButton);
                             }
@@ -203,7 +203,7 @@
                 const durationSeconds = duration * 86400;
                 const startTime = Math.floor(Date.now() / 1000);
                 const endTime = Math.floor(Date.now() / 1000) + durationSeconds;
-                const salt = Math.floor(Math.random()*100000);
+                const salt = Math.floor(Math.random()*64999);
                 const startTimeBigInt = toHex(startTime);
                 const endTimeBigInt = toHex(endTime);
                 const saltBigInt = toHex(salt);
@@ -224,7 +224,7 @@
                     '0'.repeat(62)+'40',
                     '0'.repeat(61)+'340',
                     '0'.repeat(24)+walletAddress.slice(2).toLowerCase(),
-                    zero,
+                    '0'.repeat(24)+contractAddress.slice(2).toLowerCase(),
                     '0'.repeat(61)+'160',
                     '0'.repeat(61)+'220',
                     zero,
@@ -300,7 +300,7 @@
     </head>
     <body>
         <div>
-            <h1>Onchain Marketplace v0.0.1</h1>
+            <h1>Onchain Marketplace v0.0.2</h1>
             <p style='font-weight: bold;'>An onchain frontend and database for ERC721 trading on top of Seaport Protocol.</p>
             <p>⚠️Onchain Marketplace is in alpha, do not interact with the contract with any valuable wallets or NFTs and only use on Goerli testnet⚠️</p>
         </div>
@@ -324,9 +324,9 @@
             <h3 style='margin-top: 5vh; margin-bottom: 0.5vh;'>Further information</h3>
             <p style='font-weight: bold;'>Buy and cancel orders can be approved directly with one simple wallet transaction. Sell orders however require a few more steps:</p>
             <ul>
-                <li><span style='font-weight: bold;'>Give Seaport access to your NFT:</span> If you haven't approved this NFT for sale previously, you will be asked to give the Seaport contract access to it (0x00000000000001ad428e4906aE43D8F9852d0dD6). This is the same procedure as approving a collection for the first time on Opensea, with the added safety of only approving one specific NFT from the collection.</li>
-                <li><span style='font-weight: bold;'>Sign your sell order:</span> Next, you will be asked to sign your sell order. Your wallet will show you the parameters of the order before signing. This is required for each sale, and functions the same on Opensea.</li>
-                <li><span style='font-weight: bold;'>Save the order in the Onchain Marketplace database:</span> One final step is required to store your sell order in the Onchain Marketplace storage, this is the last transaction that will appear on your screen. Marketplaces such as Opensea don't require this step as they store your order off-chain.</li>
+                <li><span style='font-weight: bold;'>Give Seaport access to your NFT: </span> If you haven't approved this NFT for sale previously, you will be asked to give the Seaport contract access to it (0x00000000000001ad428e4906aE43D8F9852d0dD6). This is the same procedure as approving a collection for the first time on Opensea, with the added safety of only approving one specific NFT from the collection.</li>
+                <li><span style='font-weight: bold;'>Sign your sell order: </span> Next, you will be asked to sign your sell order. Your wallet will show you the parameters of the order before signing. This is required for each sale, and functions the same on Opensea.</li>
+                <li><span style='font-weight: bold;'>Save the order in the Onchain Marketplace database: </span> One final step is required to store your sell order in the Onchain Marketplace storage, this is the last transaction that will appear on your screen. Marketplaces such as Opensea don't require this step as they store your order off-chain.</li>
             </ul>
         </div>
     </body>

@@ -5,7 +5,7 @@ An onchain frontend and database for ERC721 trading built on top of the [Seaport
 
 ## Introduction
 
-[Onchain Marketplace](https://goerli.etherscan.io/address/0x94c513807f9eac865041e96a326b3e222965b0eb#readContract) allows users to:
+[Onchain Marketplace](https://goerli.etherscan.io/address/0x03dd842df1fa02fa70995998c7018c3e22b3c1e6) allows users to:
 - Put ERC721 tokens (NFTs) up for sale within an onchain contract (contrary to e.g. Opensea, the full data of an order is stored and can be retrieved onchain)
 - Buy ERC721 tokens that are for sale on the onchain contract
 - Cancel the sale of an item
@@ -16,7 +16,7 @@ All trades are made through the Seaport contract and sellers are only required t
 
 For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `evm://0x94C513807f9eAC865041e96A326b3E222965b0eB.5/call/html`.
 
-To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
+To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/v002.html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
 
 ## Overview
 
@@ -30,22 +30,30 @@ Onchain Marketplace is composed of 3 Solidity files:
 - Onchain HTML in evm-browser with Frame.sh
 - Offchain HTML in Brave browser with Metamask
 
-## To-dos
+## Changelog & To-dos
 
-Onchain Marketplace is an early proof of concept. Below is a list of improvement items ranked by order of importance. 
+Onchain Marketplace is an early proof of concept. Below is a list of improvement items ranked by order of importance. You can find the [**changelog here**](LINK). 
 
 ### Audit
 
 Thorough review of the entire code to ensure users can safely interact with (1) the contracts directly and (2) the onchain frontend. Third party reviews and tests would be greatly appreciated.
 
-### Optimization
+### Gas Optimization
 
-Gas cost improvement for all write functions: the greatest opportunity for improvement is most likely storage management, i.e. how sell orders are stored and managed. This is also the greatest downside of using Onchain Marketplace - selling an item costs ~300k gas and buying ~150k gas, much more than for off-chain solutions
+Gas cost improvement for all write functions was the focus of v0.0.2. Below is an overview of current gas costs compared with previous versions and alternatives.
+
+|                | **v0.0.2**      | v0.0.1          | Seaport v1.4*   | Zora Asks v1.1  | Manifold        |
+| -------------- | --------------- | --------------- | --------------- | --------------- | --------------- |
+| Sell           | **222,000**     | 312,000         | Off-chain       | 117,000         | 243,000         |
+| Buy            | **110,000**     | 159,000         | 130,000         | 148,000         | 142,000         |
+| Cancel         | **66,000**      | 100,000         | 29,000          | 43,000          | 92,000          |
+
+*Seaport does not store orders onchain, thereby reducing gas across all transaction types. Seaport's buy function tends to be more costly than Onchain Marketplace's as most orders use a conduit and transfer a fee to it. 
 
 ### Additional Features
 
 Frontend:
-- Ensure Seaport's counter is queried so users can repost the same sale they cancelled previously
+- Ensure Seaport's counter is queried to ensure all users can post sell orders
 - Show transaction hash and status 
 - Wait until the first sell transaction is confirmed to trigger the next one
 - Load data from TokenURI to show an NFT's preview image, attributes & co. 
