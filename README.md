@@ -32,7 +32,7 @@ Onchain Marketplace is composed of 3 Solidity files:
 
 ## Changelog & To-dos
 
-Onchain Marketplace is an early proof of concept. Below is a list of improvement items ranked by order of importance. You can find the [**changelog here**](LINK). 
+Onchain Marketplace is an early proof of concept. Below is a list of improvement items ranked by order of importance. You can find the [**changelog here**](https://github.com/mozrt2/Onchain-Marketplace/blob/main/CHANGELOG.md). 
 
 ### Audit
 
@@ -40,11 +40,11 @@ Thorough review of the entire code to ensure users can safely interact with (1) 
 
 ### Gas Optimization
 
-Gas cost improvement for all write functions was the focus of v0.0.2. Below is an overview of current gas costs compared with previous versions and alternatives.
+Gas cost improvement for all write functions was the focus of Onchain Marketplace (OM) v0.0.2. Below is an overview of current gas costs compared with previous versions and alternatives.
 
-|                | **v0.0.2**      | v0.0.1          | Seaport v1.4*   | Zora Asks v1.1  | Manifold        |
+|                | **OM v0.0.2**   | OM v0.0.1       | Seaport v1.4*   | Zora Asks v1.1  | Manifold        |
 | -------------- | --------------- | --------------- | --------------- | --------------- | --------------- |
-| Sell           | **222,000**     | 312,000         | Off-chain       | 117,000         | 243,000         |
+| Sell           | **222,000**     | 312,000         | off-chain       | 117,000         | 243,000         |
 | Buy            | **110,000**     | 159,000         | 130,000         | 148,000         | 142,000         |
 | Cancel         | **66,000**      | 100,000         | 29,000          | 43,000          | 92,000          |
 
