@@ -303,7 +303,7 @@
                 font-family: Bahnschrift, 'DIN Alternate', 'Franklin Gothic Medium', 'Nimbus Sans Narrow', sans-serif-condensed, sans-serif; 
             }
             section {
-                padding: 2vh 4.5em 0;
+                padding: 2vh 5vw 0;
                 max-width: 100ch;
             }
             h3 {
@@ -321,20 +321,20 @@
                 display:flex;
                 flex-direction: row;
                 flex-wrap: wrap; /* Maybe just on sell item? */
-                gap: 8px;
+                gap: 1vw;
                 justify-items: center;
             }
             input {
                 color: inherit;
                 flex-grow: 1;
-                background: #77777730;
+                background: #77777750;
             }
             input, 
             button {
                 height:100%;
                 box-sizing: border-box;
                 border: none;
-                border-radius: .25em;
+                border-radius: 8px;
                 padding: 1.2em 2em;
             }
         </style>
@@ -350,8 +350,8 @@
                 <input type='text' id='tokenAddress' name='tokenAddress' value='0xa29926934846fbf1000b5bce7a309a89dfb6f05a' />
                 <button onclick='connect()'>Load Collection</button>
             </div>
+            <h2 id='network'></h2>
         </section>
-        <h2 id='network'></h2>
         <section style='display: none;' id='sell'>
             <div id='forSale' style='display: flex; flex-wrap: wrap;'></div>
             <h3>Sell an item from this collection</h3>
