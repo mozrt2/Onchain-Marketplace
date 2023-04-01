@@ -297,37 +297,82 @@
             }
         
         </script>
+        <style>
+            body{ 
+                margin: 0;
+                font-family: Bahnschrift, 'DIN Alternate', 'Franklin Gothic Medium', 'Nimbus Sans Narrow', sans-serif-condensed, sans-serif; 
+            }
+            section {
+                padding: 2vh 5vw 0;
+                max-width: 100ch;
+            }
+            h3 {
+                margin-top: 5vh;
+                margin-bottom: 0.5vh;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background: #111;
+                    color: aliceblue;
+                }
+            }
+            .fields {
+                width: 100%;
+                display:flex;
+                flex-direction: row;
+                flex-wrap: wrap; /* Maybe just on sell item? */
+                gap: 1vw;
+                justify-items: center;
+            }
+            input {
+                color: inherit;
+                flex-grow: 1;
+                background: #77777750;
+            }
+            input, 
+            button {
+                height:100%;
+                box-sizing: border-box;
+                border: none;
+                border-radius: 8px;
+                padding: 1.2em 2em;
+            }
+        </style>
     </head>
     <body>
-        <div>
+        <section>
             <h1>Onchain Marketplace v0.0.2</h1>
             <p style='font-weight: bold;'>An onchain frontend and database for ERC721 trading on top of Seaport Protocol.</p>
-            <p>⚠️Onchain Marketplace is in alpha, do not interact with the contract with any valuable wallets or NFTs and only use on Goerli testnet⚠️</p>
-        </div>
-        <div>
+            <p>⚠️ Onchain Marketplace is in alpha, do not interact with the contract with any valuable wallets or NFTs and only use on Goerli&nbsp;testnet&nbsp;⚠️</p>
             <span id='welcome'>Welcome!</span><span id='walletAddress'></span>
             <p>Start by typing the address of the collection you would like to buy or sell from in the box below (defaults to the Terraform Automata Goerli collection) and connect your wallet with the 'Load Collection' button (make sure to be on the Goerli network). All content is loaded via RPC requests sent to your wallet provider.</p>
-            <input type='text' id='tokenAddress' name='tokenAddress' value='0xa29926934846fbf1000b5bce7a309a89dfb6f05a' />
-            <button onclick='connect()'>Load Collection</button>
-        </div>
-        <h2 id='network'></h2>
-        <div id='forSale' style='display: flex; flex-wrap: wrap;'></div>
-        <div style='display: none;' id='sell'>
-            <h3 style='margin-top: 5vh; margin-bottom: 0.5vh;'>Sell an item from this collection</h3>
-            <input type='number' id='tokenId' placeholder='token id'/>
-            <input type='number' id='price' placeholder='price (eth)'/>
-            <input type='number' id='duration' placeholder='duration (days)'/>
-            <button onclick='sell()' class='sell'>Sell</button>
-            <h3 style='margin-top: 5vh; margin-bottom: 0.5vh;'>Cancel a sale from this collection</h3>
-            <input type='number' id='tokenIdCancel' placeholder='token id'/>  
-            <button onclick='cancel()' class='sell'>Cancel</button>
-            <h3 style='margin-top: 5vh; margin-bottom: 0.5vh;'>Further information</h3>
+            <div class="fields">
+                <input type='text' id='tokenAddress' name='tokenAddress' value='0xa29926934846fbf1000b5bce7a309a89dfb6f05a' />
+                <button onclick='connect()'>Load Collection</button>
+            </div>
+            <h2 id='network'></h2>
+        </section>
+        <section style='display: none;' id='sell'>
+            <div id='forSale' style='display: flex; flex-wrap: wrap;'></div>
+            <h3>Sell an item from this collection</h3>
+            <div class="fields">
+                <input type='number' id='tokenId' placeholder='token id'/>
+                <input type='number' id='price' placeholder='price (eth)'/>
+                <input type='number' id='duration' placeholder='duration (days)'/>
+                <button onclick='sell()' class='sell'>Sell</button>
+            </div>
+            <h3>Cancel a sale from this collection</h3>
+            <div class="fields">
+                <input type='number' id='tokenIdCancel' placeholder='token id'/>  
+                <button onclick='cancel()' class='sell'>Cancel</button>
+            </div>
+            <h3>Further information</h3>
             <p style='font-weight: bold;'>Buy and cancel orders can be approved directly with one simple wallet transaction. Sell orders however require a few more steps:</p>
             <ul>
                 <li><span style='font-weight: bold;'>Give Seaport access to your NFT: </span> If you haven't approved this NFT for sale previously, you will be asked to give the Seaport contract access to it (0x00000000000001ad428e4906aE43D8F9852d0dD6). This is the same procedure as approving a collection for the first time on Opensea, with the added safety of only approving one specific NFT from the collection.</li>
                 <li><span style='font-weight: bold;'>Sign your sell order: </span> Next, you will be asked to sign your sell order. Your wallet will show you the parameters of the order before signing. This is required for each sale, and functions the same on Opensea.</li>
                 <li><span style='font-weight: bold;'>Save the order in the Onchain Marketplace database: </span> One final step is required to store your sell order in the Onchain Marketplace storage, this is the last transaction that will appear on your screen. Marketplaces such as Opensea don't require this step as they store your order off-chain.</li>
             </ul>
-        </div>
+        </section>
     </body>
 </html>
