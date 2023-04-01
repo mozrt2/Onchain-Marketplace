@@ -1,9 +1,25 @@
 # Changelog
 
+## [0.0.3] - 2023-04-01
+Focused on new frontend features for improved UX
+
+- Backend:
+    - added the read function `getOrderStatus()` to MarketMap.sol: it queries the order status from Seaport to ensure it is still a valid order (i.e. has not been sold, cancelled or transferred without updating Onchain Marketplace's database).
+
+- Frontend:
+    - friendlier UI contributed by [@sameoldlab](https://github.com/sameoldlab)
+    - `sign()` function now queries Seaport's `getCounter()` to enable users with a counter over 0 to sell their items
+    - tiles are only generated for an item when `getOrderStatus()` returns `true` (i.e. the order is still valid)
+    - transaction status and hash are now shown to users 
+    - `sell()` transaction now only gets triggered once the `approve()` transaction is successfully processed
+    - `tokenURI()` data fetched from a collection's ERC721 contract and added to each tile:
+        - `image` and `name` on the tile itself
+        - `animation_url` pops-up when clicking on the tile title or image 
+        - `attributes` pops-up when clicking on "🛈" 
+
+
 ## [0.0.2] - 2023-03-25
 Focused on optimizing gas and simplifying the code
-
-### Changed
 
 - Optimized order parameter storage (`UniqueOrderParameters`) to reduce gas costs:
     - Gas costs v0.0.2 vs v0.0.1:

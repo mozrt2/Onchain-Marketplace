@@ -104,6 +104,8 @@ interface ISeaport {
     function cancel(OrderComponents[] calldata orders) external returns (bool cancelled);
     function getCounter(address offerer) external view returns (uint256 counter);
     function validate(Order[] calldata orders) external returns (bool validated);
+    function getOrderHash(OrderComponents calldata orderComponents) external view returns (bytes32 orderHash);
+    function getOrderStatus(bytes32 orderHash) external view returns (bool isValidated, bool isCancelled, uint256 totalFilled, uint256 totalSize);
 }
 
 interface IERC721 {

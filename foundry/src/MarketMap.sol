@@ -236,4 +236,24 @@ contract MarketMap {
 
         delete tokenIdToIndex[token][tokenId];
     }
+
+    function getOrderStatus(address token, uint256 tokenId) public view returns (bool isActive) {
+        AdvancedOrder memory advancedOrder = composeOrder(token, tokenId);
+        OrderComponents memory orderComponents = OrderComponents({
+            offerer: advancedOrder.parameters.offerer,
+            zone: advancedOrder.parameters.zone,
+            offer: advancedOrder.parameters.offer,
+            consideration: advancedOrder.parameters.consideration,
+            orderType: advancedOrder.parameters.orderType,
+            startTime: advancedOrder.parameters.startTime,
+            endTime: advancedOrder.parameters.endTime,
+            zoneHash: advancedOrder.parameters.zoneHash,
+            salt: advancedOrder.parameters.salt,
+            conduitKey: advancedOrder.parameters.conduitKey,
+            counter: seaport.getCounter(advancedOrder.parameters.offerer)
+        });
+        bytes32 orderHash = seaport.getOrderHash(orderComponents);
+        (isActive,,,) = seaport.getOrderStatus(orderHash);
+        return isActive;
+    }
 }

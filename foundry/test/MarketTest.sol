@@ -27,12 +27,12 @@ contract MarketTest is Test, OnchainMarketplace {
             identifierOrCriteria: 0,
             startAmount: 600000000000000000,
             endAmount: 600000000000000000,
-            recipient: payable(0x9Cb5433d5C5BDdc5C480103F06f03dB13b36b7C9)
+            recipient: payable(0xD8C5039F47220f21a2Cf86eF80b8146F73D01d32)
         });
 
         Order memory order =  Order({
                 parameters: OrderParameters({
-                    offerer: 0x9Cb5433d5C5BDdc5C480103F06f03dB13b36b7C9,
+                    offerer: 0xD8C5039F47220f21a2Cf86eF80b8146F73D01d32,
                     zone: 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496,//address(this),
                     offer: offer,
                     consideration: consideration,
@@ -44,10 +44,13 @@ contract MarketTest is Test, OnchainMarketplace {
                     conduitKey: 0x0000000000000000000000000000000000000000000000000000000000000000,
                     totalOriginalConsiderationItems: 1
                 }),
-                signature: hex"12bcb220744ced21e2364401a0844273451fddebae627c54d8c17e14c97c875d30de386786e6f750446ed97ac987b13c9fae909b635ef28120a0f5a4785da36f1c"
+                signature: hex"6873498e719f76e315c73f3f4a90ec558408082a469f3dfa11cd1abc8cdda4c32f2f26a24a9c75f3771483841c532930143fb4cc66508e1fc0f935e1a1802d731c"
         });  
 
         sell(order);
+        this.buy{value: 600000000000000000}(0xA29926934846fBF1000B5BCE7a309a89dFB6F05A, 2223, 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
+        bool isActive = getOrderStatus(0xA29926934846fBF1000B5BCE7a309a89dFB6F05A, 2223);
+        console2.log("isActive: ", isActive);
     } 
 }
 // tests to run:
