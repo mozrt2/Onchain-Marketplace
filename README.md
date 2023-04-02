@@ -14,7 +14,7 @@ Users can either use the Onchain Marketplace frontend and a wallet extension via
 
 All trades are made through the Seaport contract and sellers are only required to give NFT transfer access to [Seaport](https://goerli.etherscan.io/address/0x00000000000001ad428e4906ae43d8f9852d0dd6), **the Onchain Marketplace contract does not have access to NFTs listed for sale**.
 
-For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `evm://0x0ECA7A771FB46253280638998Afcb157259e9b1E.5/call/html`.
+For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `web3://0x0ECA7A771FB46253280638998Afcb157259e9b1E:5/html`.
 
 To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/v003.html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
 
