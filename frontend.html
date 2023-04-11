@@ -5,8 +5,13 @@
         <script>
 
             // Address of the Onchain Marketplace contract, set automatically by the constructor during contract creation
-            const contractAddress = '0x09Cc0FC079eF4Ed7d82d4A4B341942d8644F1672';
+            const contractAddress = '0x989c1d25feF13B4972D1Ad33c1892f50bDc22950';
             const seaport = '0x00000000000001ad428e4906aE43D8F9852d0dD6';
+            const openseaAddress = '0x0000a26b00c1F0DF003000390027140000fAa719';
+            const openseaFee = 25000000000000000/1e18;
+            const openseaConduitKey = '0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000';
+            const defaultCollection = '0xa29926934846fbf1000b5bce7a309a89dfb6f05a';
+            let royalties, royaltyAddress, incRoyalties, incOpensea;
 
             // Function to send requests to the user's wallet
             const request = (method, params) => window.ethereum.request({ method, params });
@@ -49,12 +54,15 @@
                 }
 
                 // Get the collection address to display
-                const token = (getHtml('tokenAddress').value.slice(2) || 'a29926934846fbf1000b5bce7a309a89dfb6f05a');
+                const token = (getHtml('tokenAddress').value.slice(2) || defaultCollection.toLowerCase().slice(2));
 
                 // Display loading message and select the parent element of all collection item
                 setHtml('txStatus', 'Loading...')
                 setHtml('forSale', ''); 
                 const container = getHtml('forSale');
+
+                // Check royalties
+                checkRoyalties(token);
 
                 // Get the list of tokens for sale in the collection 
                 const tokenList = await request('eth_call',[{ to: contractAddress, data:'0x093376fe000000000000000000000000'+token }, 'latest'])
@@ -104,10 +112,10 @@
                         );
 
                         const buyButton = createHtml('button', { style: 'padding: 0.6em 0.8em; font-size: 0.7em'});
-                        const priceClean = (Number(parseInt(price, 16))/1e5).toFixed(2);
-                        const priceWei = toHex(priceClean*1e18);
+                        const priceClean = ((Number(parseInt(price, 16))*(100+royalties)/100));
+                        const priceWei = toHex(priceClean*1e3);
                         const priceWei32 = "0".repeat(64-priceWei.length)+priceWei;
-                        buyButton.innerHTML = 'Buy now Ξ'+priceClean;
+                        buyButton.innerHTML = 'Buy now Ξ'+(priceClean/1e15).toFixed(3);
                         const account = getHtml('walletAddress').innerHTML.slice(2);
                         buyButton.onclick = () => {
                             buy('0x'+priceWei32, token, id, account); 
@@ -121,7 +129,7 @@
             }
 
             // Check if the token for sale is approved for Seaport, if not approve it for Seaport. Then create and sign an order for the token and send it to the Onchain Marketplace contract.
-            async function sign(walletAddress,tokenAddress,tokenId,priceWei,startTime,endTime,salt) {
+            async function sign(walletAddress,tokenAddress,tokenId,priceWei,startTime,endTime,salt,opensea) {
 
                 const seaportAddress = seaport.slice(2)
                 
@@ -142,86 +150,49 @@
                 // Get the counter for the address
                 const counter = await getCounter(walletAddress);
 
-                // Order structure for EIP712 signing 
-                const msgParams = JSON.stringify({
-                    'types': {
-                        'EIP712Domain': [
-                            { 'name': 'name', 'type': 'string' },
-                            { 'name': 'version', 'type': 'string' },
-                            { 'name': 'chainId', 'type': 'uint256' },
-                            { 'name': 'verifyingContract', 'type': 'address' }
-                        ],
-                        'OrderComponents': [
-                            { 'name': 'offerer', 'type': 'address' },
-                            { 'name': 'zone', 'type': 'address' },
-                            { 'name': 'offer', 'type': 'OfferItem[]' },
-                            { 'name': 'consideration', 'type': 'ConsiderationItem[]' },
-                            { 'name': 'orderType', 'type': 'uint8' },
-                            { 'name': 'startTime', 'type': 'uint256' },
-                            { 'name': 'endTime', 'type': 'uint256' },
-                            { 'name': 'zoneHash', 'type': 'bytes32' },
-                            { 'name': 'salt', 'type': 'uint256' },
-                            { 'name': 'conduitKey', 'type': 'bytes32' },
-                            { 'name': 'counter', 'type': 'uint256' }
-                        ],
-                        'OfferItem': [
-                            { 'name': 'itemType', 'type': 'uint8' },
-                            { 'name': 'token', 'type': 'address' },
-                            { 'name': 'identifierOrCriteria', 'type': 'uint256' },
-                            { 'name': 'startAmount', 'type': 'uint256' },
-                            { 'name': 'endAmount', 'type': 'uint256' }
-                        ],
-                        'ConsiderationItem': [
-                            { 'name': 'itemType', 'type': 'uint8' },
-                            { 'name': 'token', 'type': 'address' },
-                            { 'name': 'identifierOrCriteria', 'type': 'uint256' },
-                            { 'name': 'startAmount', 'type': 'uint256' },
-                            { 'name': 'endAmount', 'type': 'uint256' },
-                            { 'name': 'recipient', 'type': 'address' }
-                        ]
-                    },
-                    'primaryType': 'OrderComponents',
-                    'domain': {
-                        'name': 'Seaport',
-                        'version': '1.4',
-                        'chainId': '5',
-                        'verifyingContract': '0x00000000000001ad428e4906aE43D8F9852d0dD6'
-                    },
-                    'message': {
-                        'offerer': walletAddress,
-                        'offer': [
-                            {
-                                'itemType': '2',
-                                'token': tokenAddress,
-                                'identifierOrCriteria': String(tokenId),
-                                'startAmount': '1',
-                                'endAmount': '1'
-                            }
-                        ],
-                        'consideration': [
-                            {
+                let openseaConsideration;
+                let royaltiesConsideration;
+                let os = false;
+                const royaltyPrice = priceWei*(royalties/100);
+                const openseaPrice = (priceWei+royaltyPrice)*openseaFee;
+
+                if(royalties > 0) {
+                    royaltiesConsideration = {
                                 'itemType': '0',
                                 'token': '0x0000000000000000000000000000000000000000',
                                 'identifierOrCriteria': '0',
-                                'startAmount': String(priceWei),
-                                'endAmount': String(priceWei),
-                                'recipient': walletAddress
+                                'startAmount': String(royaltyPrice),
+                                'endAmount': String(royaltyPrice),
+                                'recipient': royaltyAddress
                             }
-                        ],
-                        'orderType': '0',
-                        'startTime': String(startTime),
-                        'endTime': String(endTime),
-                        'zone': contractAddress,
-                        'zoneHash': '0x0000000000000000000000000000000000000000000000000000000000000000',
-                        'salt': String(salt),
-                        'conduitKey': '0x0000000000000000000000000000000000000000000000000000000000000000',
-                        'counter': String(counter) // to be queried from the seaport contract in subsequent versions, means identical cancelled orders cannot be resubmitted currently
-                    }
-                });  
+                }
+
+                let considerations = royaltiesConsideration ? [royaltiesConsideration] : [];
+
+                // Order structure for EIP712 signing 
+                let msgParams = createMsgParams(priceWei,walletAddress,tokenAddress,tokenId,startTime,endTime,salt,counter,considerations,os);
+                const signature = await request( 'eth_signTypedData_v4', [ walletAddress, msgParams ] );
+                let signatureOpensea = '0x';
+                if (opensea) {
+                    openseaConsideration = {
+                                'itemType': '0',
+                                'token': '0x0000000000000000000000000000000000000000',
+                                'identifierOrCriteria': '0',
+                                'startAmount': String(openseaPrice),
+                                'endAmount': String(openseaPrice),
+                                'recipient': openseaAddress
+                            }
+                    considerations = [
+                        ...(openseaConsideration ? [openseaConsideration] : []),
+                        ...(royaltiesConsideration ? [royaltiesConsideration] : []),
+                        ];
+                    os = true;
+                    msgParams = createMsgParams(priceWei,walletAddress,tokenAddress,tokenId,startTime,endTime,salt,counter,considerations,os);
+                    signatureOpensea = await request( 'eth_signTypedData_v4', [ walletAddress, msgParams ] );
+                }
                 
                 // Sign the sell order
-                const signature = await request( 'eth_signTypedData_v4', [ walletAddress, msgParams ] );
-                return signature;
+                return [signature, signatureOpensea];
             }
 
             // Full sell process, triggered when the 'Sell' button is pressed
@@ -235,6 +206,7 @@
                 const tokenId = getHtml('tokenId').value;
                 const price = getHtml('price').value;
                 const duration = getHtml('duration').value;
+                const opensea = getHtml('listOS').checked;
 
                 // Convert the parameters to the correct format
                 const priceWei = price * 1e18;
@@ -247,20 +219,58 @@
                 const saltBigInt = toHex(salt);
                 const priceWeiBigInt = toHex(priceWei);
                 const tokenIdBigInt = toHex(tokenId);
-
-                // Get the sell order signature
-                const signature = await sign(walletAddress,tokenAddress,tokenId,priceWei,startTime,endTime,salt);
+                const royaltyPriceWeiBigInt = toHex(priceWei*(royalties/100))
                 
                 // 32 bytes of zero and one, to compose the calldata
                 const zero = '0'.repeat(64);
                 const one = '0'.repeat(63)+'1';
 
+                let bytesTwo, bytesFour, totalConsiderations, considerationBytes;
+
+                if(royalties>0) {
+                    bytesTwo = '0'.repeat(61)+'4c0'
+                    bytesFour = '0'.repeat(61)+'400'
+                    totalConsiderations = '0'.repeat(63)+'2';
+                    const considerationBytesList = [
+                        '0'.repeat(192),
+                        '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
+                        '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
+                        '0'.repeat(24)+walletAddress.slice(2).toLowerCase(),
+                        '0'.repeat(192),
+                        '0'.repeat(64-royaltyPriceWeiBigInt.length)+royaltyPriceWeiBigInt,
+                        '0'.repeat(64-royaltyPriceWeiBigInt.length)+royaltyPriceWeiBigInt,
+                        '0'.repeat(24)+royaltyAddress.slice(2).toLowerCase()
+                    ]
+                    considerationBytes = considerationBytesList.join('');
+                } else {
+                    bytesTwo = '0'.repeat(61)+'400'
+                    bytesFour = '0'.repeat(61)+'340'
+                    totalConsiderations = '0'.repeat(63)+'1';
+                    const considerationBytesList = [
+                        '0'.repeat(192),
+                        '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
+                        '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
+                        '0'.repeat(24)+walletAddress.slice(2).toLowerCase(),
+                    ]
+                    considerationBytes = considerationBytesList.join('');
+                }
+
+                // Get the sell order signature            
+                let [signature,signatureOpensea] = await sign(walletAddress,tokenAddress,tokenId,priceWei,startTime,endTime,salt,opensea);
+
+                if (signatureOpensea=='0x') {
+                    signatureOpensea = zero;
+                } else {
+                    signatureOpensea = '0'.repeat(62)+'41'+signatureOpensea.slice(2)+'0'.repeat(62)
+                }
+
                 // Compose the calldata (each segment is 32 bytes)
                 const calldataSegments = [
-                    '0x59ce0ec5',
-                    '0'.repeat(62)+'20',
+                    '0xe40abfcb',
                     '0'.repeat(62)+'40',
-                    '0'.repeat(61)+'340',
+                    bytesTwo,
+                    '0'.repeat(62)+'40',
+                    bytesFour,
                     '0'.repeat(24)+walletAddress.slice(2).toLowerCase(),
                     '0'.repeat(24)+contractAddress.slice(2).toLowerCase(),
                     '0'.repeat(61)+'160',
@@ -271,21 +281,17 @@
                     zero,
                     '0'.repeat(64-saltBigInt.length)+saltBigInt,
                     zero,
-                    one,
+                    totalConsiderations,
                     one,
                     '0'.repeat(63)+'2',
                     '0'.repeat(24)+tokenAddress.slice(2).toLowerCase(),
                     '0'.repeat(64-tokenIdBigInt.length)+tokenIdBigInt,
                     one,
                     one,
-                    one,
-                    zero,
-                    zero,
-                    zero,
-                    '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
-                    '0'.repeat(64-priceWeiBigInt.length)+priceWeiBigInt,
-                    '0'.repeat(24)+walletAddress.slice(2).toLowerCase(),
-                    '0'.repeat(62)+'41'+signature.slice(2)+'0'.repeat(62)
+                    totalConsiderations,
+                    considerationBytes,
+                    '0'.repeat(62)+'41'+signature.slice(2)+'0'.repeat(62),
+                    signatureOpensea
                 ]
 
                 // Join the calldata segments
@@ -435,6 +441,126 @@
                 return cleaned + '='.repeat(padding);
             }
 
+            async function checkRoyalties(token) {
+                const calldata = '0x2a55205a'+'0'.repeat(123)+'186a0'
+                try {
+                    const result = await request('eth_call', [{ to: '0x'+token, data: calldata }, 'latest']);
+                    royalties = Number(parseInt(result.slice(66),16))/1000;
+                    royaltyAddress = '0x'+result.slice(26, 66);
+                    setHtml('royalties', royalties+'%');
+                } catch (e) {
+                    royalties = 0;
+                    setHtml('royalties', royalties+'%');
+                }       
+            }
+
+            function updateTotal() {
+                const price = getHtml('price').value;
+                const opensea = getHtml('listOS').checked;
+                incRoyalties = (price*(1+(royalties/100)))
+                incOpensea = (incRoyalties*(1+openseaFee))
+                if (opensea) {
+                    setHtml('totalPrice','Ξ'+incRoyalties.toFixed(5)+' here & Ξ'+incOpensea.toFixed(5)+' on OS')
+                } else {
+                    setHtml('totalPrice','Ξ'+incRoyalties.toFixed(5))
+                }
+            }
+
+            function moveDecimalLeft15(number) {
+                const strNum = number.toString();
+                const decimalIndex = strNum.indexOf('.');
+                const padSize = decimalIndex < 0 ? 15 : 15 - decimalIndex;
+                const paddedStr = strNum.replace('.', '').padStart(padSize + 1, '0');
+                return parseFloat(paddedStr.slice(0, -15) + '.' + paddedStr.slice(-15));
+            }
+
+            function createMsgParams(priceWei,walletAddress,tokenAddress,tokenId,startTime,endTime,salt,counter,considerations,os) {
+                let zone, conduitKey;
+                if (os) {
+                    zone = '0x'+'0'.repeat(40);
+                    conduitKey = openseaConduitKey;
+                } else {
+                    zone = contractAddress;
+                    conduitKey = '0x'+'0'.repeat(64);
+                }
+                return JSON.stringify({
+                    'types': {
+                        'EIP712Domain': [
+                            { 'name': 'name', 'type': 'string' },
+                            { 'name': 'version', 'type': 'string' },
+                            { 'name': 'chainId', 'type': 'uint256' },
+                            { 'name': 'verifyingContract', 'type': 'address' }
+                        ],
+                        'OrderComponents': [
+                            { 'name': 'offerer', 'type': 'address' },
+                            { 'name': 'zone', 'type': 'address' },
+                            { 'name': 'offer', 'type': 'OfferItem[]' },
+                            { 'name': 'consideration', 'type': 'ConsiderationItem[]' },
+                            { 'name': 'orderType', 'type': 'uint8' },
+                            { 'name': 'startTime', 'type': 'uint256' },
+                            { 'name': 'endTime', 'type': 'uint256' },
+                            { 'name': 'zoneHash', 'type': 'bytes32' },
+                            { 'name': 'salt', 'type': 'uint256' },
+                            { 'name': 'conduitKey', 'type': 'bytes32' },
+                            { 'name': 'counter', 'type': 'uint256' }
+                        ],
+                        'OfferItem': [
+                            { 'name': 'itemType', 'type': 'uint8' },
+                            { 'name': 'token', 'type': 'address' },
+                            { 'name': 'identifierOrCriteria', 'type': 'uint256' },
+                            { 'name': 'startAmount', 'type': 'uint256' },
+                            { 'name': 'endAmount', 'type': 'uint256' }
+                        ],
+                        'ConsiderationItem': [
+                            { 'name': 'itemType', 'type': 'uint8' },
+                            { 'name': 'token', 'type': 'address' },
+                            { 'name': 'identifierOrCriteria', 'type': 'uint256' },
+                            { 'name': 'startAmount', 'type': 'uint256' },
+                            { 'name': 'endAmount', 'type': 'uint256' },
+                            { 'name': 'recipient', 'type': 'address' }
+                        ]
+                    },
+                    'primaryType': 'OrderComponents',
+                    'domain': {
+                        'name': 'Seaport',
+                        'version': '1.4',
+                        'chainId': '5',
+                        'verifyingContract': '0x00000000000001ad428e4906aE43D8F9852d0dD6'
+                    },
+                    'message': {
+                        'offerer': walletAddress,
+                        'offer': [
+                            {
+                                'itemType': '2',
+                                'token': tokenAddress,
+                                'identifierOrCriteria': String(tokenId),
+                                'startAmount': '1',
+                                'endAmount': '1'
+                            }
+                        ],
+                        'consideration': [
+                            {
+                                'itemType': '0',
+                                'token': '0x0000000000000000000000000000000000000000',
+                                'identifierOrCriteria': '0',
+                                'startAmount': String(priceWei),
+                                'endAmount': String(priceWei),
+                                'recipient': walletAddress
+                            },
+                            ...considerations                           
+                        ],
+                        'orderType': '0',
+                        'startTime': String(startTime),
+                        'endTime': String(endTime),
+                        'zone': zone,
+                        'zoneHash': '0x0000000000000000000000000000000000000000000000000000000000000000',
+                        'salt': String(salt),
+                        'conduitKey': conduitKey,
+                        'counter': String(counter) // to be queried from the seaport contract in subsequent versions, means identical cancelled orders cannot be resubmitted currently
+                    }
+                });  
+            }
+
         
         </script>
         <style>
@@ -465,6 +591,8 @@
                 flex-wrap: wrap; /* Maybe just on sell item? */
                 gap: 1vw;
                 justify-items: center;
+                align-items: center;
+
             }
             input {
                 color: inherit;
@@ -497,7 +625,7 @@
     </head>
     <body>
         <section>
-            <h1>Onchain Marketplace v0.0.3</h1>
+            <h1>Onchain Marketplace v0.0.4</h1>
             <p style='font-weight: bold;'>An onchain frontend and database for ERC721 trading on top of Seaport Protocol.</p>
             <p>⚠️Onchain Marketplace is in alpha, do not interact with the contract with any valuable wallets or NFTs and only use on Goerli testnet⚠️</p>
             <span id='welcome'>Welcome!</span><span id='walletAddress'></span>
@@ -511,12 +639,17 @@
         <section style='display: none;' id='sell'>
             <div id='forSale' style='display: flex; flex-wrap: wrap;'></div>
             <h3>Sell an item from this collection</h3>
+            <div style="margin-bottom: 2vh; margin-top: 3vh;">
+                <input type='checkbox' id='listOS' onclick='updateTotal()'/>
+                <label for="listOS">Also list on OpenSea</label>
+            </div>
             <div class="fields">
                 <input type='number' id='tokenId' placeholder='token id'/>
-                <input type='number' id='price' placeholder='price (eth)'/>
+                <input type='number' id='price' placeholder='price (eth)' oninput='updateTotal()'/>
                 <input type='number' id='duration' placeholder='duration (days)'/>
                 <button onclick='sell()' class='sell'>Sell</button>
             </div>
+            <p>Royalties:&nbsp;<span id='royalties'></span>&nbsp;&nbsp;|&nbsp;&nbsp;Total Price:&nbsp;<span id='totalPrice'></span></p>
             <h3>Cancel a sale from this collection</h3>
             <div class="fields">
                 <input type='number' id='tokenIdCancel' placeholder='token id'/>  

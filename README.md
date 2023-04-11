@@ -5,7 +5,7 @@ An onchain frontend and database for ERC721 trading built on top of the [Seaport
 
 ## Introduction
 
-[Onchain Marketplace](https://goerli.etherscan.io/address/0x0eca7a771fb46253280638998afcb157259e9b1e) allows users to:
+[Onchain Marketplace](https://goerli.etherscan.io/address/0x6d46faf7764d16133dce5342465d8b8e85e9c24f) allows users to:
 - Put ERC721 tokens (NFTs) up for sale within an onchain contract (contrary to e.g. Opensea, the full data of an order is stored and can be retrieved onchain)
 - Buy ERC721 tokens that are for sale on the onchain contract
 - Cancel the sale of an item
@@ -14,9 +14,9 @@ Users can either use the Onchain Marketplace frontend and a wallet extension via
 
 All trades are made through the Seaport contract and sellers are only required to give NFT transfer access to [Seaport](https://goerli.etherscan.io/address/0x00000000000001ad428e4906ae43d8f9852d0dd6), **the Onchain Marketplace contract does not have access to NFTs listed for sale**.
 
-For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `web3://0x0ECA7A771FB46253280638998Afcb157259e9b1E:5/html`.
+For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `web3://0x6d46faf7764d16133dce5342465d8b8e85e9c24f:5/html`.
 
-To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/v003.html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
+To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/v004.html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
 
 ## Overview
 
@@ -40,23 +40,22 @@ Thorough review of the entire code to ensure users can safely interact with (1) 
 
 ### Gas Optimization
 
-Gas cost improvement for all write functions was the focus of Onchain Marketplace (OM) v0.0.2. Below is an overview of current gas costs compared with previous versions and alternatives.
+Gas usage improvement for all write functions was the focus of Onchain Marketplace (OM) v0.0.2. Below is an overview of current gas usage compared with previous versions and alternatives.
 
-|                | **OM v0.0.2**   | OM v0.0.1       | Seaport v1.4*   | Zora Asks v1.1  | Manifold        |
-| -------------- | --------------- | --------------- | --------------- | --------------- | --------------- |
-| Sell           | **222,000**     | 312,000         | off-chain       | 117,000         | 243,000         |
-| Buy            | **110,000**     | 159,000         | 130,000         | 148,000         | 142,000         |
-| Cancel         | **66,000**      | 100,000         | 29,000          | 43,000          | 92,000          |
+|                | **OM v0.0.4****           | OM v0.0.2       | OM v0.0.1       | Seaport v1.4*   | Zora Asks v1.1  | Manifold        |
+| -------------- | ------------------------- | --------------- | --------------- | --------------- | --------------- | --------------- |
+| Sell           | **223k (234k/252k/300k)** | 222k            | 312k            | off-chain       | 117k            | 243k            |
+| Buy            | **112k (140k)**           | 110k            | 159k            | 130k            | 148k            | 142k            |
+| Cancel         | **69k (73k)**             | 66k             | 100k            | 29k             | 43k             | 92k             |
 
 *Seaport does not store orders onchain, thereby reducing gas across all transaction types. Seaport's buy function tends to be more costly than Onchain Marketplace's as most orders use a conduit and transfer a fee to it. 
+**Gas usage varies depending on parameters, see values in brackets:
+- Sell: without royalties, no OpenSea listing (with royalties, no OS listing / without royalties, incl. OS listing / with royalties, incl. OS listing)
+- Buy / Cancel: without royalties (with royalties)
 
 ### New Features 
 
 General:
-- Enable users to automatically list on OpenSea (and thereby Blur) when submitting a sell order: 
-    - as OM uses Seaport, every time an order is listed it emits an event that OpenSea tracks
-    - OpenSea however only list orders for which they get a fee
-    - a user should be able to opt into also listing on OS when placing a sell order on OM
 - Modularize Onchain Marketplace: break OM into smaller modules for flexible use. Potential use cases:
     - allow for an ERC721 contract extension (i.e. similar to ownable.sol, there could be a tradable.sol extension allowing users to trade their NFTs directly from the contract): this could be implemented alongside contract-enforced royalty options
     - update variables such as the Seaport address to migrate to a newer version of Seaport without having to redeploy everything
@@ -67,6 +66,7 @@ Frontend:
 - Optimize html file size
 - Add tile ordering options
 - Adjust UI to be less text-heavy
+- Add an optional input for the `html()` function to change the default collection displayed by the frontend
 
 Backend:
 - Enable more sale types: bulk sales, ERC1155 sales, ERC20 payments, decreasing/increasing prices, auctions, etc. 

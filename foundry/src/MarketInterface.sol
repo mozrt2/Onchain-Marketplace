@@ -77,6 +77,21 @@ struct ErrorsAndWarnings {
     uint16[] warnings;
 }
 
+struct UniqueOrderParameters {
+    uint64 amount;
+    uint32 startTime;
+    uint32 endTime; 
+    uint16 salt; 
+    bytes1 vSignature;
+    bytes32 rSignature;
+    bytes32 sSignature;
+}
+
+struct AdditionalRecipient {
+    address recipient;
+    uint64 amount;
+}
+
 enum ItemType {
     NATIVE,
     ERC20,

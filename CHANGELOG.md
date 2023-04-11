@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.4] - 2023-04-11
+Focused on new features enabling automatic [EIP2981](https://eips.ethereum.org/EIPS/eip-2981) royalty payments and listing on OpenSea
+
+- **Royalties**:
+    - **multiple considerations**: a sell order can now contain more than one consideration. All considerations will be stored in the OM database. This enables royalty payments.
+    - **EIP2981 royalty check**: the frontend automatically check if a collection has enabled royalties following EIP2981. If yes, the royalty payment is automatically added to a sell order. 
+
+- **OpenSea listing**:
+    - **OpenSea-compatible order generation**: when the signature of an order compatible with OpenSea is added at the end of the parameters in `sell()`, the function automatically generates and validates a second order compatible with OS' requirements (i.e. 2.5% OS fee), thereby automatically listing the order on OS. Note: while this feature should work in theory, it cannot be tested on Goerli as OS is not indexing validated orders on Goerli.
+    - **list on OpenSea checkbox**: in the frontend, users can tick a box when selling an item to also list it on OpenSea. This creates two orders (it is therefore more gas costly): an order for Onchain Marketplace without any additional fees and an order for OpenSea with OS' mandatory fee.
+
+- **Constructor variables**:
+    - the following variables used both in the frontend and backend can now be set inside the constructor:
+        - `_seaportAddress`: Seaport contract address
+        - `_openseaAddress`: Opensea contract address, for fee payment
+        - `_openseaFee`: the fee charged by Opensea for a sale of 1 ETH
+        - `_openseaConduitKey`: the key for the Opensea conduit
+        - `_defaultCollection`: the default NFT collection for the frontend
+
+- **Storage variables**:
+    - amount is now stored as a uint64 instead of uint32 to allow for a larger range of prices (between 18.4k ETH and 1000 Wei) while not significantly impacting gas
+
 ## [0.0.3] - 2023-04-01
 Focused on new frontend features for improved UX
 
