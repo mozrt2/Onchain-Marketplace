@@ -16,7 +16,7 @@ All trades are made through the Seaport contract and sellers are only required t
 
 For the full user experience, it is recommended to query the html() function through the [evm-browser](https://github.com/nand2/evm-browser) using the [frame.sh wallet](https://frame.sh/) at `web3://0x6d46faf7764d16133dce5342465d8b8e85e9c24f:5/html`.
 
-To test without having to set up anything else, you can use the off-chain version [here](https://onchainmarketplace.mozrt.repl.co/v004.html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
+To test without having to set up anything else, you can use [w3link.io at this link](https://0x6d46faf7764d16133dce5342465d8b8e85e9c24f.gor.w3link.io/html) with a browser wallet such as Metamask (all interactions on the page are still queried onchain). 
 
 ## Overview
 
